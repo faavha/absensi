@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  schedule:
+    - cron: '0 23 * * 0' # Senin 06.00 WIB: cek celah dependensi baru
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Siapkan PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3, zip, gd, intl, bcmath, fileinfo, exif
+          coverage: none
+
+      - name: Siapkan Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependensi
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Build aset (Vite)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Siapkan environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Test
+        run: php artisan test
+
+      - name: Gaya kode (Pint)
+        run: ./vendor/bin/pint --test
+
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Siapkan PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Celah keamanan dependensi PHP
+        run: composer audit --locked --abandoned=ignore
+
+      - name: Celah keamanan dependensi JS (high ke atas)
+        run: npm audit --omit=dev --audit-level=high

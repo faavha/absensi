@@ -7,12 +7,12 @@ use Tests\TestCase;
 class ExampleTest extends TestCase
 {
     /**
-     * Root URL redirects ke admin panel, bukan halaman welcome default Laravel.
+     * Root URL = dasbor; tamu diarahkan ke halaman login.
      */
-    public function test_the_application_redirects_root_to_admin_panel(): void
+    public function test_tamu_di_root_diarahkan_ke_login(): void
     {
         $response = $this->get('/');
 
-        $response->assertRedirect('/admin');
+        $response->assertRedirect(route('login'));
     }
 }

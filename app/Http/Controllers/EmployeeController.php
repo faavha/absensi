@@ -75,7 +75,7 @@ class EmployeeController extends Controller
 
     public function create(): View
     {
-        return view('pegawai.form', ['employee' => new Employee()]);
+        return view('pegawai.form', ['employee' => new Employee]);
     }
 
     public function store(Request $request): RedirectResponse
